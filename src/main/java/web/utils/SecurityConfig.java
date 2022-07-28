@@ -2,21 +2,28 @@ package web.utils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import web.services.UserAuthenticationService;
-
-import static org.springframework.security.config.Customizer.withDefaults;
+import org.springframework.security.web.access.channel.ChannelProcessingFilter;
+import org.springframework.web.filter.CharacterEncodingFilter;
 
 @EnableWebSecurity
+@ComponentScan("web")
 public class SecurityConfig {
 
     @Autowired
-    private UserAuthenticationService userAuthenticationService;
+    private UserDetailsService userDetailsService;
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
 
     @Bean
     public BCryptPasswordEncoder encoder() {
@@ -24,22 +31,23 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService() {
-        return userAuthenticationService;
-    }
-
-    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests((authz) -> authz
+        CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
+        characterEncodingFilter.setEncoding("UTF-8");
+        http.addFilterBefore(characterEncodingFilter, ChannelProcessingFilter.class);
+        http.csrf().disable();
+        http.sessionManagement().sessionFixation().changeSessionId();
+        //http.sessionManagement().sessionFixation().migrateSession();
+        http.authorizeHttpRequests(authorize ->
+                        authorize.antMatchers("/registration").permitAll()
+                                .antMatchers("/getRecords").hasRole("ADMIN")
                         .anyRequest().authenticated()
-                )
-                .httpBasic(withDefaults());
+        )
+        .formLogin((form) -> form
+                .loginPage("/login").defaultSuccessUrl("/", true)
+                .permitAll()
+        )
+        .logout();
         return http.build();
-    }
-
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().antMatchers("/ignore1", "/ignore2");
     }
 }

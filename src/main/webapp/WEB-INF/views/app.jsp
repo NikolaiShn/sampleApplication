@@ -9,7 +9,7 @@
 <body>
 <div>
     <h4><a href="/login">Войти</a></h4>
-    <h4><a href="/getRecords">Просмотреть список</a></h4>
+    <h4><a href="/listing">Просмотреть список</a></h4>
     <h4><a href="/addOne">Добавить данные в список</a></h4>
     <div>
           <form method="POST" action="/logout">

@@ -17,7 +17,7 @@ import java.util.Properties;
 
 @Configuration
 @ComponentScan(basePackages = {"web", "dto"})
-@EnableJpaRepositories
+@EnableJpaRepositories(basePackages = {"web.dao"})
 @EnableTransactionManagement
 public class HibernateAnnotationConfig {
 
@@ -38,6 +38,7 @@ public class HibernateAnnotationConfig {
         factory.setJpaVendorAdapter(vendorAdapter);
         Properties properties = new Properties();
         properties.setProperty("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
+        properties.setProperty("hibernate.id.new_generator_mappings", "false");
         factory.setJpaProperties(properties);
         factory.setPackagesToScan("model");
         factory.setDataSource(dataSource());
